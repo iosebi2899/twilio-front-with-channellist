@@ -41,6 +41,7 @@ const Channels = (props) => {
 
         try {
             token = await getToken(email);
+            localStorage.setItem('token',token)
         } catch {
             throw new Error("Unable to get token, please reload this page");
         }
@@ -72,14 +73,14 @@ const Channels = (props) => {
         //   }
         } 
       },[])
-    //   console.log()
-    console.log(channel)
-    const user = channel.client
 
+    
     return (
         <div>
             <ul>
-                {channel.channelList.map(e =>  <Link to={{ pathname :`/channels/${e.sid}`}} component={ChatScreen(user)} style={{padding:'20px 50px',width:'250px',cursor:'pointer', backgroundColor:'lightgrey',color:'white',textAlign: 'center'}}>{e.friendlyName}</Link> )}
+                {channel.channelList.map(e =>  <Link to={{ pathname :`/channels/${e.friendlyName}`}} style={{padding:'20px 50px',width:'250px',cursor:'pointer', backgroundColor:'lightgrey',color:'white',textAlign: 'center'}}>
+                    {e.friendlyName}
+                    </Link> )}
             </ul>
         </div>
     )

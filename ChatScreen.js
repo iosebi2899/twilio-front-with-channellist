@@ -1,4 +1,5 @@
 import React, { useState,useEffect,useRef } from "react";
+import { useParams } from 'react-router-dom'
 import {
   AppBar,
   Backdrop,
@@ -12,97 +13,58 @@ import {
   Toolbar,
   Typography,
 } from "@material-ui/core";
-import { useParams } from "react-router";
 import { Send } from "@material-ui/icons";
 import axios from "axios";
 import ChatItem from "./ChatItem";
 const Chat = require("twilio-chat");
 
 const ChatScreen = (props) =>  {
-    
-    // const [chat,setChat] = useState({text:"",messages:[],loading:false ,channel:null})
-    
-    const scrollDiv = useRef();
+    const { id } = useParams()
+    const [chat,setChat] = useState({text:"",messages:[],loading:true ,channel:props.channel})
 
-    const joinChannel = async (channel) => {
-        if (channel.channelState.status !== "joined") {
-         await channel.join();
-       }
+
+   const handleMessageAdded = (message) => {
+    setChat({
+        ...chat,
+        messages: [...chat.messages, message],
+      },
+     //  scrollToBottom()
+    );
+  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(async()=>{
+      const token = localStorage.getItem('token')
+      const client = await Chat.Client.create(token);
        
-      //  scrollToBottom();
-      
-     };
-
-     const sendMessage = () => {
-      const { text, channel, } = chat;
-      if (text) {
-        setChat({...chat, loading: true })
-        channel.sendMessage(String(text).trim());
-        setChat({...chat, text: "", loading: false});
-      }
-    };
-    const {id} = useParams()
-
-    const [chat,setChat] = useState({text:"",messages:[],loading:false ,channel:{}})
-
-     const handleMessageAdded = (message) => {
-       setChat({
-           ...chat,
-           messages: [...chat.messages, message],
-         }
-        //  scrollToBottom()
-       );
-     };
-     
-    //  const scrollToBottom = () => {
-    //    const scrollHeight = scrollDiv.current.scrollHeight;
-    //    const height = scrollDiv.current.clientHeight;
-    //    const maxScrollTop = scrollHeight - height;
-    //    scrollDiv.current.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0;
-    //    console.log(scrollDiv.current)
-    //  };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      useEffect(async()=>{
-        
-        const { location } = props;
-        const { state } = location || {};
-        const { room } = state || {};
-      
-        setChat({...chat, loading: true });
-
-        
-        const client = await Chat.Client.create(localStorage.getItem('token'));
+      try {
         const channel = await client.getChannelBySid(id);
-        channel.on("messageAdded", handleMessageAdded);
-        
-        try {
-          
-          const messages = await channel.getMessages();
-          setChat({...chat, messages: messages.items || [] , channel,
-            loading: false });
-        } catch(err) {
-          try {
-            console.log('wtf')
-            const channel = await client.createChannel({
-              uniqueName: room,
-              friendlyName: room,
-            });
-            setChat({...chat, channel})
-          } catch {
-            throw new Error("Unable to create channel, please reload this page");
-          }
-        } 
-        
+          joinChannel(channel);
 
-      },[])
-
+      } catch(err) {
+          throw new Error('Unablse')
+      //   try {
+      //     const channel = await client.createChannel({
+      //       uniqueName: room,
+      //       friendlyName: room,
+      //     });
+      //     setChannel(channel);
+      //   } catch {
+      //     throw new Error("Unable to create channel, please reload this page");
+      //   }
+      } 
+    },[])
+    
+      const sendMessage = () => {
+        const { text, channel, } = chat;
+        if (text) {
+          setChat({...chat, loading: true })
+          channel.sendMessage(String(text).trim());
+          setChat({...chat, text: "", loading: false});
+        }
+      };
 
       const { loading, text, messages } = chat;
-      const { location } = props;
-      const { state } = location || {};
-      const { email } = state || {};
       
-      console.log(chat)
       return (
         <Container component="main" maxWidth="md">
           <Backdrop open={loading} style={{ zIndex: 99999 }}>
@@ -111,21 +73,23 @@ const ChatScreen = (props) =>  {
     
           <AppBar elevation={10}>
             <Toolbar>
-              
+              <Typography variant="h6">
+                {/* {`Room: ${friendlyName}`} */}
+              </Typography>
             </Toolbar>
           </AppBar>
     
           <CssBaseline />
     
           <Grid container direction="column" style={styles.mainGrid}>
-            <Grid item style={styles.gridItemChatList} ref={scrollDiv}>
+            <Grid item style={styles.gridItemChatList}>
               <List dense={true}>
                   {messages &&
                     messages.map((message) => 
                       <ChatItem
                         key={message.index}
                         message={message}
-                        email={email}/>
+                        email='test'/>
                     )}
               </List>
             </Grid>
