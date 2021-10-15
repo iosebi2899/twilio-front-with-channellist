@@ -21,7 +21,9 @@ const Chat = require("twilio-chat");
 const ChatScreen = (props) =>  {
     
     // const [chat,setChat] = useState({text:"",messages:[],loading:false ,channel:null})
-    
+    const [chat,setChat] = useState({text:"",loading:false ,channel:{}})
+    const [items, setItems] = useState([])
+
     const scrollDiv = useRef();
 
     const joinChannel = async (channel) => {
@@ -30,7 +32,7 @@ const ChatScreen = (props) =>  {
        }
        
       //  scrollToBottom();
-      
+      channel.on("messageAdded", handleMessageAdded);
      };
 
      const sendMessage = () => {
@@ -43,13 +45,8 @@ const ChatScreen = (props) =>  {
     };
     const {id} = useParams()
 
-    const [chat,setChat] = useState({text:"",messages:[],loading:false ,channel:{}})
-
      const handleMessageAdded = (message) => {
-       setChat({
-           ...chat,
-           messages: [...chat.messages, message],
-         }
+       setItems(...items,message
         //  scrollToBottom()
        );
      };
@@ -73,12 +70,13 @@ const ChatScreen = (props) =>  {
         
         const client = await Chat.Client.create(localStorage.getItem('token'));
         const channel = await client.getChannelBySid(id);
-        channel.on("messageAdded", handleMessageAdded);
+        joinChannel(channel)
         
         try {
           
           const messages = await channel.getMessages();
-          setChat({...chat, messages: messages.items || [] , channel,
+          setItems(...items,messages.items || [])
+          setChat({...chat, channel,
             loading: false });
         } catch(err) {
           try {
@@ -96,13 +94,12 @@ const ChatScreen = (props) =>  {
 
       },[])
 
-
-      const { loading, text, messages } = chat;
+      const { loading, text } = chat;
       const { location } = props;
       const { state } = location || {};
       const { email } = state || {};
-      
       console.log(chat)
+      console.log(items)
       return (
         <Container component="main" maxWidth="md">
           <Backdrop open={loading} style={{ zIndex: 99999 }}>
@@ -120,8 +117,8 @@ const ChatScreen = (props) =>  {
           <Grid container direction="column" style={styles.mainGrid}>
             <Grid item style={styles.gridItemChatList} ref={scrollDiv}>
               <List dense={true}>
-                  {messages &&
-                    messages.map((message) => 
+                  {items &&
+                    items.map((message) => 
                       <ChatItem
                         key={message.index}
                         message={message}
