@@ -13,11 +13,12 @@ import {
 const WelcomeScreen = () => {
     const history = useHistory()
     const [user, setUser] = useState({email:''})
-    const { email, room } = user;
+    const { email } = user;
     const login = () => {
         if (email) {
-          history.push("channels", { email });
+          history.push({pathname:"channels", state:{ email }});
         }
+        localStorage.setItem('email',user.email)
       }
     
     const handleChange = (key,val) =>{

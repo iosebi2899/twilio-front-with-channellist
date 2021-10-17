@@ -8,7 +8,7 @@ function Router() {
   return (
     <BrowserRouter>
       <Switch>
-        <Route exact path="/channels/:id" component={ChatScreen} />
+        <Route exact path="/channels/:id" component={Channels} />
         <Route path="/channels" component={Channels} />
         <Route path="/" component={WelcomeScreen} />
       </Switch>

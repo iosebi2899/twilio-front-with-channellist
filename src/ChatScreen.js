@@ -1,6 +1,5 @@
-import React, { useState,useEffect,useRef } from "react";
+import React, { useState,useEffect, useRef } from "react";
 import {
-  AppBar,
   Backdrop,
   CircularProgress,
   Container,
@@ -9,13 +8,11 @@ import {
   IconButton,
   List,
   TextField,
-  Toolbar,
-  Typography,
 } from "@material-ui/core";
 import { useParams } from "react-router";
 import { Send } from "@material-ui/icons";
-import axios from "axios";
 import ChatItem from "./ChatItem";
+import ScrollToBottom from 'react-scroll-to-bottom';
 const Chat = require("twilio-chat");
 
 const ChatScreen = (props) =>  {
@@ -23,16 +20,11 @@ const ChatScreen = (props) =>  {
     // const [chat,setChat] = useState({text:"",messages:[],loading:false ,channel:null})
     const [chat,setChat] = useState({text:"",loading:false ,channel:{}})
     const [items, setItems] = useState([])
-
-    const scrollDiv = useRef();
-
     const joinChannel = async (channel) => {
         if (channel.channelState.status !== "joined") {
          await channel.join();
        }
-       
-      //  scrollToBottom();
-      channel.on("messageAdded", handleMessageAdded);
+       scrollToBottom()
      };
 
      const sendMessage = () => {
@@ -44,38 +36,38 @@ const ChatScreen = (props) =>  {
       }
     };
     const {id} = useParams()
-
-     const handleMessageAdded = (message) => {
-       setItems(...items,message
-        //  scrollToBottom()
-       );
-     };
+    const scrollDiv = useRef()
+    const scrollToBottom = () =>{
+      scrollDiv.current.scrollTop = scrollDiv.current.scrollTopMax
+    }
      
-    //  const scrollToBottom = () => {
-    //    const scrollHeight = scrollDiv.current.scrollHeight;
-    //    const height = scrollDiv.current.clientHeight;
-    //    const maxScrollTop = scrollHeight - height;
-    //    scrollDiv.current.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0;
-    //    console.log(scrollDiv.current)
-    //  };
+    
       // eslint-disable-next-line react-hooks/exhaustive-deps
       useEffect(async()=>{
-        
         const { location } = props;
         const { state } = location || {};
         const { room } = state || {};
       
         setChat({...chat, loading: true });
 
-        
+        const handleMessageAdded = async() => {
+          const messages = await channel.getMessages();
+          setItems(...items,messages.items || [])
+          scrollToBottom()
+        };
+
         const client = await Chat.Client.create(localStorage.getItem('token'));
         const channel = await client.getChannelBySid(id);
         joinChannel(channel)
+        channel.on("messageAdded",handleMessageAdded)
         
+        
+
         try {
           
           const messages = await channel.getMessages();
           setItems(...items,messages.items || [])
+          scrollToBottom()
           setChat({...chat, channel,
             loading: false });
         } catch(err) {
@@ -93,39 +85,32 @@ const ChatScreen = (props) =>  {
         
 
       },[])
+      console.log(items)
 
       const { loading, text } = chat;
-      const { location } = props;
-      const { state } = location || {};
-      const { email } = state || {};
-      console.log(chat)
-      console.log(items)
+
       return (
         <Container component="main" maxWidth="md">
           <Backdrop open={loading} style={{ zIndex: 99999 }}>
             <CircularProgress style={{ color: "white" }} />
           </Backdrop>
-    
-          <AppBar elevation={10}>
-            <Toolbar>
-              
-            </Toolbar>
-          </AppBar>
-    
           <CssBaseline />
     
           <Grid container direction="column" style={styles.mainGrid}>
-            <Grid item style={styles.gridItemChatList} ref={scrollDiv}>
-              <List dense={true}>
-                  {items &&
-                    items.map((message) => 
-                      <ChatItem
-                        key={message.index}
-                        message={message}
-                        email={email}/>
-                    )}
-              </List>
-            </Grid>
+          <ScrollToBottom>
+              <Grid item style={styles.gridItemChatList} ref={scrollDiv}>
+                  <List dense={true}>
+                  
+                      {items &&
+                        items.map((message) => 
+                          <ChatItem
+                            key={message.index}
+                            message={message}
+                            email={localStorage.getItem('email')}/>
+                        )}
+                  </List>
+              </Grid>
+          </ScrollToBottom>            
     
             <Grid item style={styles.gridItemMessage}>
               <Grid
@@ -162,7 +147,6 @@ const ChatScreen = (props) =>  {
           </Grid>
         </Container>
       );
-    
   }
   const styles = {
     textField: { width: "100%", borderWidth: 0, borderColor: "transparent" },
